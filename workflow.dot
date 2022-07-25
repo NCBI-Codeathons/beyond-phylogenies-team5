@@ -16,29 +16,46 @@ digraph D {
         cases [label="Reported Cases"];
     }
 
+    subgraph cluster_standard {
+        label = "Standardize inputs";
+        snpdist [label="SNP distances"];
+        phytime [label="Time resolved phylogeny"];
+    }
+
     subgraph cluster2 {
         label="Literature";
         serial [label="Serial interval"];
         infectious [label="Infectious period"];
-
 	}
 
     subgraph cluster3 {
-        label = "Model details";
-        assumptions [label="Assumptions"];
-        model [label="Model details"];
+        label = "Benchmark";
+        tp [label="TransPhylo"];
+        out2 [label="Outbreaker2"];
+        tc [label="Outbreaker2"];
     }
+    
+    compout [label="Compare outputs"];
 
     subgraph cluster4 {
         label = "Deliverables";
-        cli [label="Command line tool"];
-        viz [label="Visualization Dashboard"];
-        insights [label="Scientific Insights"];
+        cli [label="Pipeline"];
+        viz [label="Visualization"];
+        insights [label="Real world insights"];
     }
 
-    gen -> model [ltail=cluster0,lhead=cluster3];
-    cases -> model [ltail=cluster1,lhead=cluster3];
-    infectious -> model [ltail=cluster2,lhead=cluster3];
+    post [label="Post processing\n/additional modelling"];
 
-    model -> viz [ltail=cluster3,lhead=cluster4];
+
+    dummy1[label="", fixedsize="false", width=0, height=0, shape=none];
+
+    gen -> snpdist [ltail=cluster0,lhead=cluster_standard];
+    cases -> snpdist [ltail=cluster1,lhead=cluster_standard];
+    infectious -> snpdist [ltail=cluster2,lhead=cluster_standard];
+
+    snpdist -> out2 [ltail=cluster_standard,lhead=cluster3];
+
+    out2 -> compout [ltail=cluster3,lhead=cluster_standardout];
+    compout -> post;
+    post -> viz [lhead=cluster4];
 }
