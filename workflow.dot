@@ -11,51 +11,54 @@ digraph D {
         metadata [label="Metadata"];
     }
     
-    subgraph cluster1 {
-        label="Epidemiology data";
-        cases [label="Reported Cases"];
-    }
+    // subgraph cluster1 {
+    //     label="Epidemiology data";
+    //     cases [label="Reported Cases"];
+    // }
 
     subgraph cluster_standard {
-        label = "Standardize inputs";
+        label = "Standardized inputs:\nSimulated & real world";
         snpdist [label="SNP distances"];
         phytime [label="Time resolved phylogeny"];
     }
 
     subgraph cluster2 {
         label="Literature";
-        serial [label="Serial interval"];
+        serial [label="Generation time"];
         infectious [label="Infectious period"];
+        sample [label="Sampling times"];
 	}
 
     subgraph cluster3 {
-        label = "Benchmark";
+        label = "Tools";
         tp [label="TransPhylo"];
         out2 [label="Outbreaker2"];
-        tc [label="Outbreaker2"];
+        tc [label="transcluster"];
+        simple [label="A simple SNP threshold"];
     }
-    
-    compout [label="Compare outputs"];
+
+    subgraph cluster_comp {
+        label="Benchmark";
+        compout [label="Compare estimates"];
+        scale [label="Scalability"];
+        gen [label="Generalizability"];
+    }
 
     subgraph cluster4 {
         label = "Deliverables";
-        cli [label="Pipeline"];
-        viz [label="Visualization"];
+        cli [label="Benchmarks"];
+        viz [label="Estimates"];
         insights [label="Real world insights"];
     }
-
-    post [label="Post processing\n/additional modelling"];
-
 
     dummy1[label="", fixedsize="false", width=0, height=0, shape=none];
 
     gen -> snpdist [ltail=cluster0,lhead=cluster_standard];
-    cases -> snpdist [ltail=cluster1,lhead=cluster_standard];
+    // cases -> snpdist [ltail=cluster1,lhead=cluster_standard];
     infectious -> snpdist [ltail=cluster2,lhead=cluster_standard];
 
     snpdist -> out2 [ltail=cluster_standard,lhead=cluster3];
 
-    out2 -> compout [ltail=cluster3,lhead=cluster_standardout];
-    compout -> post;
-    post -> viz [lhead=cluster4];
+    out2 -> compout [ltail=cluster3,ltail=cluster_standardout,lhead=cluster_comp];
+    compout -> viz [lhead=cluster4,ltail=cluster_comp];
 }
