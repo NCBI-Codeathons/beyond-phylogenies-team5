@@ -1,4 +1,4 @@
-(base) tyler@Tylers-MacBook-Pro-2 sim_123-23 % phastSim --outpath ./ --reference ../MN908947.3.fasta --treeFile sim_123-23.tre --createPhylip --createFasta --seed 1230
+(base) tyler@Tylers-MacBook-Pro-2 sim_123-23 % phastSim --outpath ./ --reference ../MN908947.3.fasta --treeFile sim_123-23.tre --createPhylip --createFasta --seed 1230 --scale 0.00082
 
  Finished reading reference genome at ../MN908947.3.fasta with 29903 bases.
 Assuming UNREST nucleotide mutation model.
@@ -15,15 +15,14 @@ Hypermutation class probabilities:
 [1.0]
 Hypermutation class rates:
 []
-Time for reading tree with ETE3: 0.002274036407470703
-Total time after initializing: 0.0027980804443359375
-Total time after populating tree: 0.12128496170043945
+Time for reading tree with ETE3: 0.0023140907287597656
+Total time after initializing: 0.0028328895568847656
+Total time after populating tree: 0.11478996276855469
 
- Total cumulative substitution rate per site before normalization: 1.588070394274822
-Total time after normalizing: 0.15822601318359375
-Total time after preparing for simulations: 0.15825486183166504
-Total time after simulating sequence evolution along tree with Gillespie approach: 3.015399932861328
-Total time after writing short file: 3.1297621726989746
-Total time after writing fasta file: 3.1781539916992188
-Total time after writing phylip file: 3.2247297763824463
-Overall time: 3.2247519493103027
+ Total cumulative substitution rate per site before normalization: 1936.6712125302709
+Total time after normalizing: 0.15185308456420898
+Total time after preparing for simulations: 0.1518700122833252
+Total time after simulating sequence evolution along tree with Gillespie approach: 0.15567588806152344
+Total time after writing short file: 0.15620088577270508
+Total time after writing fasta file: 0.17157888412475586
+Total time after writing phylip file: 0.18700003623962402
