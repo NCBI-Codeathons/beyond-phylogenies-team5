@@ -1,19 +1,19 @@
 library(TransPhylo)
 library(ape)
 
-# note units of time here are days 
+# note units of time here are days
 # they will be converted to fraction of year when passed to sim function
 Ne <- 10
 start <- 2019.1
 end <- 2019.2
 # R0 = off.r*off.p/(1‐off.p)
 off.r=4
-pi <- 0.1
+pi <- 0.2
 gen.mean <- 5.2
 gen.sd <- 1.72
 samp.mean <- 5.2
 samp.sd <- 1.72
-out<-"sim"
+out<-"sim2"
 
 #R <- off.r*off.p/(1.0-off.p)
 #print(paste0("Using R value of ", R))
@@ -36,7 +36,7 @@ extractTransmissionPairs <- function(ttree) {
   return(ret)
 }
 
-#function to annotate tip labels from ttree table 
+#function to annotate tip labels from ttree table
 extractTipLabels <- function(ttree, tips){
   t <- data.frame(ttree$ttree)
   colnames(t)<- c("inf.date", "samp.date", "anc")
@@ -70,14 +70,14 @@ ptree<-extractPTree(simu)
 
 # extract and write true pairs
 pairs<-extractTransmissionPairs(ttree)
-write.table(pairs, 
-            file=paste0(out, ".pairs"), 
-            col.names=TRUE, 
-            row.names=FALSE, 
+write.table(pairs,
+            file=paste0(out, ".pairs"),
+            col.names=TRUE,
+            row.names=FALSE,
             sep="\t",
             quote=FALSE)
 
-# format tips as "infected.date_sampled.date_index" 
+# format tips as "infected.date_sampled.date_index"
 p<-phyloFromPTree(ptree)
 p$tip.label <- extractTipLabels(ttree, p$tip.label)
 write.tree(p, paste0(out, ".tre"))
@@ -85,8 +85,8 @@ write.tree(p, paste0(out, ".tre"))
 # save simulation output as .rds
 saveRDS(simu, file=paste0(out, ".rds"))
 
-# output some stuff 
+# output some stuff
 print(paste0("Number of tips sampled: ", length(p$tip.label)))
 print(paste0("Number of true pairs sampled:", nrow(pairs)))
 print(paste0("Writing outputs with prefix: ", out))
-
+print(paste0("Date last sample:"), dateLastSample(simu))
