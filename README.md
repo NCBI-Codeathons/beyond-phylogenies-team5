@@ -21,6 +21,8 @@ List of participants and affiliations:
 * Visualize estimates 
 ## Approach
 
+![workflow](workflow.png)
+
 We selected three well-used tools to be part of our benchmarking analysis: [TransPhylo](https://github.com/xavierdidelot/TransPhylo), [outbreaker2](https://github.com/reconhub/outbreaker2), and [transcluster](https://github.com/JamesStimson/transcluster). We will include a simple SNP threshold to identify transmission clusters as a baseline. 
 
 We simulated an outbreak using TransPhylo and simulated sequences from the resulting phylogenetic tree using [phastsim](https://github.com/NicolaDM/phastSim). For a real world dataset, we used all the sequences from Massachusetts, USA from the form of July 2010 from GISAID. This time period covers a well characterized superspreading event [(Ref)](https://www.sciencedirect.com/science/article/pii/S0092867421014902). 
