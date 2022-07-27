@@ -10,17 +10,23 @@ threshold=2
 out <- "~/beyond-phylogenies-team5/simulation/sim_20-2/transPhylo_sim_20-2.graph.pdf"
 
 graph_from_ttree <- function(ttree){
-  tips <- ttree$nam
+  tips <- gsub(".*_", "", ttree$nam)
   t <- data.frame(ttree$ttree)
   colnames(t)<- c("inf.date", "samp.date", "from")
   t<-t %>% mutate("to" = row_number()) 
   t<-t %>% dplyr::select(c("from", "to"))
   t$nodeType<-"intermediate"
-  t$name<-t$to
+  t$from_name<-paste0("_",t$from)
+  t$to_name<-paste0("_", t$to)
+  for (i in 1:length(tips)){
+    name<-tips[[i]]
+    t[t$from==as.integer(i),"from_name"] <- name
+    t[t$to==as.integer(i),"to_name"] <- name
+  }
   t[1:length(tips),]$nodeType <- "observed"
-  vertices <- t %>% select(name, nodeType)
-  edges <- t %>% select(from, to) %>% filter(from!=0)
-  g<-graph_from_data_frame(edges, directed=TRUE, vertices=vertices)
+  vertices <- t %>% select(to_name, nodeType)
+  edges <- t %>% select(from_name, to_name) %>% filter(from_name!="_0")
+  g<-graph_from_data_frame(edges, directed=FALSE, vertices=vertices)
   return(g)
 }
 
