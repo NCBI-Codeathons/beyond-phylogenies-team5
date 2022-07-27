@@ -2,6 +2,7 @@
 
 #install.packages('igraph')
 library(igraph)
+require (tidyverse)
 
 #read the pairwise data file
 df_pairs <- read.table(file = 'transphylo_demo_output.tsv', sep = '\t', header = TRUE)
@@ -23,5 +24,6 @@ sizes(community2)
 #output dataframe with each sample's cluster ID written next to it
 df_clusters <- as.data.frame(cbind(clusterID=community2$membership, sample=community2$names))
 
-write.csv(df_clusters,"cluster_assignments.csv", row.names=FALSE)
+df_clusters_rowsise <- df_clusters%>% group_by(clusterID) %>% summarize (N=n(),Clusters=paste (sample,collapse = ":"))
 
+write.csv(df_clusters,"cluster_assignments.csv", row.names=FALSE)
