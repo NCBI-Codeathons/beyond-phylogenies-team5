@@ -1,27 +1,27 @@
 #to convert pairwise data (e.g from TransPhylo output) into cluster data
 
-#install.packages('igraph')
 library(igraph)
+library(plyr)
+library(dplyr)
 
-#read the pairwise data file
-df_pairs <- read.table(file = 'transphylo_demo_output.tsv', sep = '\t', header = TRUE)
-df_pairs$connection <- 1
+convert_transpylo <- function(fname) {
+    #read the pairwise data file
+    df_pairs <- read.table(file = fname, sep = '\t', header = TRUE)
+    df_pairs$connection <- 1
 
-#transform into a matrix
-m_pairs <- graph.data.frame(df_pairs, directed=FALSE)
+    #transform into a matrix
+    m_pairs <- graph.data.frame(df_pairs, directed=FALSE)
 
-#make adjacency matrix
-matrix_pairs <- as_adjacency_matrix(m_pairs, names=TRUE, sparse=FALSE, attr="connection")
-diag(matrix_pairs) <- 0
+    #make adjacency matrix
+    matrix_pairs <- as_adjacency_matrix(m_pairs, names=TRUE, sparse=FALSE, attr="connection")
+    diag(matrix_pairs) <- 0
 
-#write.csv(matrix_pairs,"matrix_pairs.csv")
+    #sorting the adjacency matrix into bottom-up clusters, in a way that optimizes the modularity score
+    community2 <- fastgreedy.community(as.undirected(graph.adjacency(matrix_pairs)))
+    sizes(community2)
 
-#sorting the adjacency matrix into bottom-up clusters, in a way that optimizes the modularity score
-community2 <- fastgreedy.community(as.undirected(graph.adjacency(matrix_pairs)))
-sizes(community2)
+    #output dataframe with each sample's cluster ID written next to it
+    df_clusters <- as.data.frame(cbind(clusterID=community2$membership, sample=community2$names))
 
-#output dataframe with each sample's cluster ID written next to it
-df_clusters <- as.data.frame(cbind(clusterID=community2$membership, sample=community2$names))
-
-write.csv(df_clusters,"cluster_assignments.csv", row.names=FALSE)
-
+    return(df_clusters)
+}
