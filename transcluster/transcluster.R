@@ -3,7 +3,6 @@ library(tidyverse)
 library(lubridate)
 library(transcluster)
 
-setwd("/Users/cc19/Documents/NCBI CODEATHON/DATA/SIMULATED_DATASET")
 
 snp_dist<-as_tibble(fread("sars-cov-2_simulation_output.SNPDIST.tsv",sep="\t",header=TRUE)) %>%
   rename(strain1=`snp-dists 0.7.0`) 
