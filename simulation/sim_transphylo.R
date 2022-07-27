@@ -1,5 +1,6 @@
 library(TransPhylo)
 library(ape)
+library(lubridate)
 
 # note units of time here are days
 # they will be converted to fraction of year when passed to sim function
@@ -8,12 +9,13 @@ start <- 2019.1
 end <- 2019.2
 # R0 = off.r*off.p/(1‐off.p)
 off.r=4
-pi <- 0.2
+pi <- 0.1
 gen.mean <- 5.2
 gen.sd <- 1.72
 samp.mean <- 5.2
 samp.sd <- 1.72
-out<-"sim2"
+nSampled=20
+out<-"~/beyond-phylogenies-team5/simulation/sim_20-2/sim_20-2"
 
 #R <- off.r*off.p/(1.0-off.p)
 #print(paste0("Using R value of ", R))
@@ -62,7 +64,8 @@ simu <- simulateOutbreak(neg=Ne*(gen.mean/365),
                          ws.mean=samp.mean/365,
                          ws.std=samp.sd/365,
                          dateStartOutbreak=start,
-                         dateT=end)
+                         dateT=end,
+                         nSampled=n)
 simu
 
 ttree<-extractTTree(simu)
@@ -81,6 +84,8 @@ write.table(pairs,
 p<-phyloFromPTree(ptree)
 p$tip.label <- extractTipLabels(ttree, p$tip.label)
 write.tree(p, paste0(out, ".tre"))
+
+saveRDS(ttree, paste0(out, ".ttree.rds"))
 
 # save simulation output as .rds
 saveRDS(simu, file=paste0(out, ".rds"))
