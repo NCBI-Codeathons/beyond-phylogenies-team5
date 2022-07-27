@@ -7,7 +7,7 @@ read_input <- function(fname){
         seq_ids <- strsplit(x, ",")[[1]]
         tmp <- data.frame(seq = seq_ids)
         tmp$cluster <- ctr 
-        ctr <- ctr + 1
+        ctr <<- ctr + 1
         tmp
     })
 
@@ -24,3 +24,5 @@ res <- lapply(output_files, function(x){
     read_input(x)
 })
 res_df <- do.call("rbind", res)
+
+true_pairs <- read.table("../simulation/sim_123-23/sim_123-23.pairs", header=T, sep="\t")
