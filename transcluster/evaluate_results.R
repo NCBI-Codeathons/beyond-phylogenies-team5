@@ -2,6 +2,9 @@ source("../benchmark/pairs_to_cluster.R")
 library(dplyr)
 library(ggplot2)
 
+true_pairs <- convert_transpylo("../simulation/sim_123-23/sim_123-23.pairs")
+true_clusters <- n_distinct(true_pairs$clusterID)
+
 read_input <- function(fname){
     lines <- readLines(fname)
     ctr <- 0
@@ -29,14 +32,13 @@ res <- lapply(output_files, function(x){
     read_input(x)
 })
 res_df <- do.call("rbind", res)
+known_res_df <- res_df %>% filter(seq_id %in% true_pairs$sample)
 
-nclusters_df <- res_df %>%
+nclusters_df <- known_res_df %>%
     group_by(threshold, threshold_val) %>%
     summarise(ncluster = n_distinct(cluster))
 
-true_pairs <- convert_transpylo("../simulation/sim_123-23/sim_123-23.pairs")
-true_clusters <- n_distinct(true_pairs$clusterID)
 
 nclusters_df %>%
-    ggplot(aes(threshold_val, ncluster)) + geom_line() + geom_point() + geom_hline(yintercept = true_clusters, linetype = "dashed", color="red") + facet_grid(threshold ~ .) +theme_bw()
+    ggplot(aes(threshold_val, ncluster)) + geom_line() + geom_point() + geom_hline(yintercept = true_clusters, linetype = "dashed", color="red") + facet_grid(threshold ~ .) +theme_bw() + scale_x_continuous(breaks=seq(1, 10))
 ggsave("./simulated_results.pdf", w= 7.5, h = 10)
