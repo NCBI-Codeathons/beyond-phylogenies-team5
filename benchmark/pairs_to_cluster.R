@@ -23,5 +23,5 @@ sizes(community2)
 #output dataframe with each sample's cluster ID written next to it
 df_clusters <- as.data.frame(cbind(clusterID=community2$membership, sample=community2$names))
 
-write.csv(df_clusters,"cluster_assignments.csv")
+write.csv(df_clusters,"cluster_assignments.csv", row.names=FALSE)
 
