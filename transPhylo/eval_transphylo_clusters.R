@@ -1,13 +1,33 @@
-library(igraph)
-library(TransPhylo)
-library(dplyr)
+#!/usr/local/bin/Rscript
 
-tp.out <- "~/beyond-phylogenies-team5/simulation/sim_123-23/transphylo_sim123-23_transphylo_output.rds"
-int.host.min <- 0
-int.host.max <- 5
+suppressPackageStartupMessages({
+  library(igraph)
+  library(TransPhylo)
+  library(dplyr)
+  library(GetoptLong)
+})
+
+#################################################
+# Command-line arg parsing
+#################################################
+
 burn=0.2
-threshold=2
-out <- "~/beyond-phylogenies-team5/simulation/sim_123-23/transphylo_sim123-23"
+min<-1
+max<-10
+out <- "out"
+
+GetoptLong(
+  "rds=s", "Path to TransPhylo output (.rds output from run_transphylo.R)",
+  "truePairs=s", "Path to known .pairs file",
+  "out=s", "Output file prefix",
+  "burn=f", "Proportion of MCMC iterations to discard as burn-in",
+  "min=f", "Minimum # of intermediate hosts threshold to test",
+  "max=f", "Maximum # of intermediate hosts threshold to test"
+)
+
+#################################################
+# Functions
+#################################################
 
 graph_from_ttree <- function(ttree){
   tips <- gsub(".*_", "", ttree$nam)
@@ -37,7 +57,7 @@ plot_transmission_graph <- function(g){
        vertex.label.dist=1)
 }
 
-cluster_transmission_graph <- function(g, threshold){
+cluster_transmission_graph <- function(g, threshold, plot=FALSE, out="clusters"){
   # get dist mat as # theoretical hosts between pairs
   tips <- V(g)[V(g)$nodeType!="intermediate"]$name
   dist<-shortest.paths(g, v=tips, to=tips)
@@ -46,11 +66,14 @@ cluster_transmission_graph <- function(g, threshold){
   adjacency[dist<=threshold] <- 1
   adjacency[dist>threshold] <- 0
   diag(adjacency) <- 0
-  #plot(as.undirected(graph.adjacency(adjacency)))
+  if (plot == TRUE){
+    pdf(paste0(out, "_clusterGraph.pdf"))
+    plot(as.undirected(graph.adjacency(adjacency)))
+    dev.off()
+  }
   clusters<-fastgreedy.community(as.undirected(graph.adjacency(adjacency)))
   return(clusters)
 }
-
 
 # returns some stats 
 # tp = # of true positives 
@@ -126,32 +149,38 @@ get_pairs_from_clusters <- function(clusters){
   return(pairs)
 }
 
+
+#################################################
+# Main
+#################################################
+
 # read outputs and build graph
-res<-readRDS(tp.out)
+print("Reading inputs...")
+res<-readRDS(rds)
+
+print("Extracting transmission tree...")
 med<-medTTree(res, burnin=burn)
 ttree<-extractTTree(med)
+
+print("Building transmission graph...")
 g<-graph_from_ttree(ttree)
+pdf(paste0(out, "_tGraph.pdf"))
+plot_transmission_graph(g)
+dev.off()
 
 # evaluate for diff thresholds 
-true_pairs <- read.table("~/beyond-phylogenies-team5/simulation/sim_123-23/sim_123-23.pairs",
+print("Reading true pairs...")
+true_pairs <- read.table(truePairs,
                          header=T, 
                          sep="\t")
 
-# read outputs and build graph
-res<-readRDS("~/beyond-phylogenies-team5/simulation/sim_20-2/transphylo_sim20-2_transphylo_output.rds")
-med<-medTTree(res, burnin=burn)
-ttree<-extractTTree(med)
-g<-graph_from_ttree(ttree)
 
-# evaluate for diff thresholds 
-true_pairs <- read.table("~/beyond-phylogenies-team5/simulation/sim_20-2/sim_20-2.pairs",
-                         header=T, 
-                         sep="\t")
 
 # try different clustering thresholds and get results 
+print("Testing across specified clustering thresholds...")
 results<-list()
-for (thresh in seq(2, 10, 1)){
-  clust<-cluster_transmission_graph(g, 2)
+for (thresh in seq(1, 10, 1)){
+  clust<-cluster_transmission_graph(g, thresh, plot=FALSE)
   pairs <- get_pairs_from_clusters(clust)
   stats <- get_stats_pairs(true_pairs, pairs)
   stats["thresh"] <- thresh
@@ -159,25 +188,22 @@ for (thresh in seq(2, 10, 1)){
 }
 results <- rbind.fill(results)
 
+
 # make plots 
+print("Outputting results as _clustEval.pdf and _clustEval.tsv")
 s <- results %>% select(tpr, fdr, fnr, precision, thresh)
 sm <- melt(s, id="thresh")
-#pdf("~/beyond-phylogenies-team5/simulation/sim_123-23/transphylo_sim123-23_eval-plot.pdf")
+pdf(paste0(out, "_clustEval.pdf"))
 ggplot(sm, aes(x=thresh, y=value, color=variable)) +
   theme_minimal() + 
   geom_line(lwd=2)
-#dev.off()
+dev.off()
 
+write.csv(results,
+          paste0(out, "_clustEval.tsv"), 
+          row.names=FALSE,
+          sep="\t",
+          quote=FALSE)
 
+print("Done!")
 
-
-
-
-
-nam=ttree$nam
-ttree=ttree$ttree
-ttree=cbind(ttree,rep(1,nrow(ttree)))
-n=nrow(ttree)
-ys <- rep(0, n)
-scale <- rep(1,n)
-todo=c(which(ttree[,3]==0))
