@@ -1,3 +1,5 @@
+#!/usr/local/bin/Rscript
+
 suppressPackageStartupMessages({
   library(TransPhylo)
   library(ape)
