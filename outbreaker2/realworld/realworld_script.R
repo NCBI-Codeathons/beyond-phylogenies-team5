@@ -3,7 +3,7 @@ library(ape)
 library(distcrete)
 
 # import sequence data
-seq <- read.FASTA('/Users/ashwinbabu/Downloads/gisaid_MA_provincetown_filtered_aligned_cds.fasta', type = 'DNA')
+seq <- read.FASTA('', type = 'DNA')
 
 # create vector for generation time distribution
 mu = 2.9
