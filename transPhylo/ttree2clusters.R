@@ -1,13 +1,30 @@
-library(igraph)
-library(TransPhylo)
-library(dplyr)
+#!/usr/local/bin/Rscript
 
-tp.out <- "~/beyond-phylogenies-team5/simulation/sim_20-2/transphylo_sim20-2_transphylo_output.rds"
-int.host.min <- 0
-int.host.max <- 5
+suppressPackageStartupMessages({
+  library(igraph)
+  library(TransPhylo)
+  library(dplyr)
+  library(GetoptLong)
+})
+
+#################################################
+# Command-line arg parsing
+#################################################
+
 burn=0.2
 threshold=2
-out <- "~/beyond-phylogenies-team5/simulation/sim_20-2/transPhylo_sim_20-2.graph.pdf"
+out <- "out"
+
+GetoptLong(
+  "rds=s", "TransPhylo output (.rds output from run_transphylo.R)",
+  "out=s", "Output file prefix",
+  "burn=f", "Proportion of MCMC iterations to discard as burn-in",
+  "thresh=f", "Number of intermediate hosts to build clusters"
+)
+
+#################################################
+# Functions
+#################################################
 
 graph_from_ttree <- function(ttree){
   tips <- gsub(".*_", "", ttree$nam)
@@ -37,7 +54,7 @@ plot_transmission_graph <- function(g){
        vertex.label.dist=1)
 }
 
-cluster_transmission_graph <- function(g, threshold){
+cluster_transmission_graph <- function(g, threshold, plot=FALSE, out="clusters"){
   # get dist mat as # theoretical hosts between pairs
   tips <- V(g)[V(g)$nodeType!="intermediate"]$name
   dist<-shortest.paths(g, v=tips, to=tips)
@@ -46,24 +63,38 @@ cluster_transmission_graph <- function(g, threshold){
   adjacency[dist<=threshold] <- 1
   adjacency[dist>threshold] <- 0
   diag(adjacency) <- 0
-  plot(as.undirected(graph.adjacency(adjacency)))
+  if (plot == TRUE){
+    pdf(paste0(out, "_clusterGraph.pdf"))
+    plot(as.undirected(graph.adjacency(adjacency)))
+    dev.off()
+  }
   clusters<-fastgreedy.community(as.undirected(graph.adjacency(adjacency)))
   return(clusters)
 }
 
-res<-readRDS(tp.out)
+#################################################
+# Main
+#################################################
+
+print("Reading inputs...")
+res<-readRDS(rds)
+
+print("Extracting transmission tree...")
 med<-medTTree(res, burnin=burn)
 ttree<-extractTTree(med)
+
+print("Building transmission graph...")
 g<-graph_from_ttree(ttree)
 
-pdf(out)
+pdf(paste0(out, "_tGraph.pdf"))
 plot_transmission_graph(g)
 dev.off()
 
+print("Identifying clusters in transmission graph...")
 clust<-cluster_transmission_graph(g, 2)
 
+print("Writing outputs as _cluster_assignments.csv and _clusters.csv...")
 df_clusters <- as.data.frame(cbind(clusterID=clust$membership, sample=clust$names))
-
 df_clusters_rowwise <- df_clusters%>% group_by(clusterID) %>% summarize (N=n(),Clusters=paste (sample,collapse = ":"))
 
 write.csv(df_clusters,
@@ -75,3 +106,5 @@ write.csv(df_clusters_rowwise,
           paste0(out,"_clusters.csv"), 
           row.names=FALSE,
           quote=FALSE)
+
+print("Done!")
