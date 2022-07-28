@@ -48,6 +48,8 @@ end_time <- Sys.time()
 runtime=end_time - start_time
 print(runtime)
 
+saveRDS(res, file = 'res_sim.rds')
+
 
 pdf('plot_posterior.pdf')
 plot(res,"post")
@@ -70,5 +72,18 @@ plot(res, type = "alpha", burnin = 2000)
 dev.off()
 
 library(htmltools)
-save_html(plot(res, type = "network", burnin = 3000, min_support = 0.01),'test.html')
+save_html(plot(res, type = "network", burnin = 3000, min_support = 0.80),'test.html')
 
+links = summary(res)$tree
+
+links = links[links$support>0.8,]
+links = na.omit(links)
+# read in true pair info
+
+pairs = read.table('../../simulation/sim_123-23/sim_123-23.pairs',header=T)
+#get seq numbers used in reference
+seqNums = strsplit(names(seqs),'_')
+seqNums = as.integer(sapply(seqNums, "[[", 3))
+
+links$fromT = seqNums[links$from]
+links$toT = seqNums[links$to]
