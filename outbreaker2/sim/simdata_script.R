@@ -45,6 +45,7 @@ set.seed(1)
 start_time <- Sys.time()
 res <- outbreaker(data = data)
 end_time <- Sys.time()
+saveRDS(res, file = 'res_sim.rds')
 runtime=end_time - start_time
 print(runtime)
 

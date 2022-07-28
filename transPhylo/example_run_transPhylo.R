@@ -3,13 +3,13 @@ library(ape)
 library(lattice)
 library(coda)
 
-set.seed(12322)
+set.seed(111112)
 
-setwd("~/beyond-phylogenies-team5/simulation/sim_20-2/")
+setwd("~/beyond-phylogenies-team5/simulation/sim_123-23/")
 
-simu <- readRDS("sim_20-2.rds")
+simu <- readRDS("sim_123-23.rds")
 
-phy<-read.tree(file="sim_20-2.tre")
+phy<-read.tree(file="sim_123-23.tre")
 
 ptree<-ptreeFromPhylo(phy,dateLastSample=dateLastSample(simu))
 
@@ -17,10 +17,10 @@ ptree<-ptreeFromPhylo(phy,dateLastSample=dateLastSample(simu))
 w.mean <- 5.2
 w.std <- 1.72
 dateT=2019.2
-mcmc=500000
+mcmc=250000
 thin=1000
 burn=0.2
-out="~/beyond-phylogenies-team5/transPhylo/transphylo_sim20-2"
+out="~/beyond-phylogenies-team5/transPhylo/transphylo_sim123-23"
 
 res<-inferTTree(ptree,
                 w.mean=w.mean/365,

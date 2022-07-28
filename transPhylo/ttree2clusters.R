@@ -1,26 +1,49 @@
-library(igraph)
-library(TransPhylo)
-library(dplyr)
+#!/usr/local/bin/Rscript
 
-tp.out <- "~/beyond-phylogenies-team5/simulation/sim_20-2/transphylo_sim20-2_transphylo_output.rds"
-int.host.min <- 0
-int.host.max <- 5
+suppressPackageStartupMessages({
+  library(igraph)
+  library(TransPhylo)
+  library(dplyr)
+  library(GetoptLong)
+})
+
+#################################################
+# Command-line arg parsing
+#################################################
+
 burn=0.2
 threshold=2
-out <- "~/beyond-phylogenies-team5/simulation/sim_20-2/transPhylo_sim_20-2.graph.pdf"
+out <- "out"
+
+GetoptLong(
+  "rds=s", "TransPhylo output (.rds output from run_transphylo.R)",
+  "out=s", "Output file prefix",
+  "burn=f", "Proportion of MCMC iterations to discard as burn-in",
+  "thresh=f", "Number of intermediate hosts to build clusters"
+)
+
+#################################################
+# Functions
+#################################################
 
 graph_from_ttree <- function(ttree){
-  tips <- ttree$nam
+  tips <- gsub(".*_", "", ttree$nam)
   t <- data.frame(ttree$ttree)
   colnames(t)<- c("inf.date", "samp.date", "from")
   t<-t %>% mutate("to" = row_number()) 
   t<-t %>% dplyr::select(c("from", "to"))
   t$nodeType<-"intermediate"
-  t$name<-t$to
+  t$from_name<-paste0("_",t$from)
+  t$to_name<-paste0("_", t$to)
+  for (i in 1:length(tips)){
+    name<-tips[[i]]
+    t[t$from==as.integer(i),"from_name"] <- name
+    t[t$to==as.integer(i),"to_name"] <- name
+  }
   t[1:length(tips),]$nodeType <- "observed"
-  vertices <- t %>% select(name, nodeType)
-  edges <- t %>% select(from, to) %>% filter(from!=0)
-  g<-graph_from_data_frame(edges, directed=TRUE, vertices=vertices)
+  vertices <- t %>% select(to_name, nodeType)
+  edges <- t %>% select(from_name, to_name) %>% filter(from_name!="_0")
+  g<-graph_from_data_frame(edges, directed=FALSE, vertices=vertices)
   return(g)
 }
 
@@ -31,7 +54,7 @@ plot_transmission_graph <- function(g){
        vertex.label.dist=1)
 }
 
-cluster_transmission_graph <- function(g, threshold){
+cluster_transmission_graph <- function(g, threshold, plot=FALSE, out="clusters"){
   # get dist mat as # theoretical hosts between pairs
   tips <- V(g)[V(g)$nodeType!="intermediate"]$name
   dist<-shortest.paths(g, v=tips, to=tips)
@@ -40,41 +63,38 @@ cluster_transmission_graph <- function(g, threshold){
   adjacency[dist<=threshold] <- 1
   adjacency[dist>threshold] <- 0
   diag(adjacency) <- 0
-  plot(as.undirected(graph.adjacency(adjacency)))
+  if (plot == TRUE){
+    pdf(paste0(out, "_clusterGraph.pdf"))
+    plot(as.undirected(graph.adjacency(adjacency)))
+    dev.off()
+  }
   clusters<-fastgreedy.community(as.undirected(graph.adjacency(adjacency)))
   return(clusters)
 }
 
+#################################################
+# Main
+#################################################
 
-matrix_pairs <- as_adjacency_matrix(m_pairs, names=TRUE, sparse=FALSE, attr="connection")
-diag(matrix_pairs) <- 0
+print("Reading inputs...")
+res<-readRDS(rds)
 
-#write.csv(matrix_pairs,"matrix_pairs.csv")
-
-#sorting the adjacency matrix into bottom-up clusters, in a way that optimizes the modularity score
-community2 <- fastgreedy.community(as.undirected(graph.adjacency(matrix_pairs)))
-sizes(community2)
-
-#output dataframe with each sample's cluster ID written next to it
-df_clusters <- as.data.frame(cbind(clusterID=community2$membership, sample=community2$names))
-
-df_clusters_rowsise <- df_clusters%>% group_by(clusterID) %>% summarize (N=n(),Clusters=paste (sample,collapse = ":"))
-
-write.csv(df_clusters,"cluster_assignments.csv", row.names=FALSE)
-
-res<-readRDS(tp.out)
+print("Extracting transmission tree...")
 med<-medTTree(res, burnin=burn)
 ttree<-extractTTree(med)
+
+print("Building transmission graph...")
 g<-graph_from_ttree(ttree)
 
-pdf(out)
+pdf(paste0(out, "_tGraph.pdf"))
 plot_transmission_graph(g)
 dev.off()
 
+print("Identifying clusters in transmission graph...")
 clust<-cluster_transmission_graph(g, 2)
 
+print("Writing outputs as _cluster_assignments.csv and _clusters.csv...")
 df_clusters <- as.data.frame(cbind(clusterID=clust$membership, sample=clust$names))
-
 df_clusters_rowwise <- df_clusters%>% group_by(clusterID) %>% summarize (N=n(),Clusters=paste (sample,collapse = ":"))
 
 write.csv(df_clusters,
@@ -86,3 +106,5 @@ write.csv(df_clusters_rowwise,
           paste0(out,"_clusters.csv"), 
           row.names=FALSE,
           quote=FALSE)
+
+print("Done!")
