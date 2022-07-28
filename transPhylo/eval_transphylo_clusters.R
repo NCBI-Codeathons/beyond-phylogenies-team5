@@ -5,6 +5,7 @@ suppressPackageStartupMessages({
   library(TransPhylo)
   library(plyr)
   library(dplyr)
+  library(reshape2)
   library(GetoptLong)
 })
 
