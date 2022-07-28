@@ -154,11 +154,22 @@ for (group_df in split(res_df, list(res_df$threshold, res_df$threshold_val))){
 }
 results <- rbind.fill(results)
 
-nclusters_df <- known_res_df %>%
-    group_by(threshold, threshold_val) %>%
-    summarise(ncluster = n_distinct(cluster))
+# make plots 
+print("Outputting results as _clustEval.pdf and _clustEval.tsv")
+s <- results %>% select(tpr, fdr, fnr, precision, threshold, threshold_type)
+sm <- melt(s, id=c("threshold", "threshold_type"))
+pdf(paste0(out, "_clustEval.pdf"))
+ggplot(sm, aes(x=threshold, y=value, color=variable)) +
+  theme_minimal() + 
+  geom_line(lwd=2) + 
+  facet_wrap(~threshold_type, nrow=2)
+dev.off()
 
+write.table(results,
+            paste0(out, "_clustEval.tsv"),
+            col.names=TRUE,
+            row.names=FALSE,
+            sep="\t",
+            quote=FALSE)
 
-nclusters_df %>%
-    ggplot(aes(threshold_val, ncluster)) + geom_line() + geom_point() + geom_hline(yintercept = true_clusters, linetype = "dashed", color="red") + facet_grid(threshold ~ .) +theme_bw() + scale_x_continuous(breaks=seq(1, 10))
-ggsave("./simulated_results.pdf", w= 7.5, h = 10)
+print("Done!")
