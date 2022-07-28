@@ -3,6 +3,7 @@
 suppressPackageStartupMessages({
   library(igraph)
   library(TransPhylo)
+  library(plyr)
   library(dplyr)
   library(GetoptLong)
 })
