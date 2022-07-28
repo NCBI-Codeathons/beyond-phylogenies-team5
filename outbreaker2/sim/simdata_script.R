@@ -45,7 +45,6 @@ set.seed(1)
 start_time <- Sys.time()
 res <- outbreaker(data = data)
 end_time <- Sys.time()
-saveRDS(res, file = 'res_sim.rds')
 runtime=end_time - start_time
 print(runtime)
 
@@ -76,9 +75,10 @@ library(htmltools)
 save_html(plot(res, type = "network", burnin = 3000, min_support = 0.80),'test.html')
 
 links = summary(res)$tree
-
-links = links[links$support>0.8,]
 links = na.omit(links)
+links$fromT = seqNums[links$from]
+links$toT = seqNums[links$to]
+write.table(links,file='full_link_table.csv')
 # read in true pair info
 
 pairs = read.table('../../simulation/sim_123-23/sim_123-23.pairs',header=T)
@@ -86,5 +86,15 @@ pairs = read.table('../../simulation/sim_123-23/sim_123-23.pairs',header=T)
 seqNums = strsplit(names(seqs),'_')
 seqNums = as.integer(sapply(seqNums, "[[", 3))
 
-links$fromT = seqNums[links$from]
-links$toT = seqNums[links$to]
+row.names(links) <- NULL
+
+
+## now prep the TPR/FPR curve
+for(j in seq(from = 0, to = 1, by = 0.05)){
+  
+}
+
+links = links[links$support>cutoff,]
+
+
+
