@@ -25,6 +25,7 @@ set.seed(1)
 start = Sys.time()
 res <- outbreaker(data = data)
 end = Sys.time()
+saveRDS(res, file = 'res_realworld.rds')
 cat('Time elapsed for outbreaker(): ', end - start)
 
 # visualize results
