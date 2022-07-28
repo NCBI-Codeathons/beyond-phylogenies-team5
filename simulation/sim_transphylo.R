@@ -1,24 +1,42 @@
-library(TransPhylo)
-library(ape)
-library(lubridate)
+suppressPackageStartupMessages({
+  require(TransPhylo)
+  require(ape)
+  require(lubridate)
+  require(GetoptLong)
+})
 
-# note units of time here are days
-# they will be converted to fraction of year when passed to sim function
-Ne <- 10
+#################################################
+# Command-line arg parsing
+#################################################
+
+ne <- 10
 start <- 2019.1
 end <- 2019.2
-# R0 = off.r*off.p/(1‐off.p)
-off.r=4
+r <- 4
 pi <- 0.1
-gen.mean <- 5.2
-gen.sd <- 1.72
-samp.mean <- 5.2
-samp.sd <- 1.72
-nSampled=20
-out<-"~/beyond-phylogenies-team5/simulation/sim_20-2/sim_20-2"
+genMean <- 5.2
+genSD <- 1.72
+sampMean <- 5.2
+sampSD <- 1.72
+nSampled=200
+out<-"sim"
 
-#R <- off.r*off.p/(1.0-off.p)
-#print(paste0("Using R value of ", R))
+GetoptLong(
+  "ne=i", "Intrahost effective population size (Ne)",
+  "start=f", "Simulation start date",
+  "end=f", "Simulation end date",
+  "r=i", "R number",
+  "pi=f", "Probability of an infected being sampled",
+  "genMean=f", "Generation time distribution mean (days)",
+  "genSD=f", "Generation time distribution stdev (days)",
+  "sampMean=f", "Sampling time distribution mean (days)",
+  "sampSD=f", "Sampling time distribution stdev (days)",
+  "nSampled=i", "Number of individuals sampled"
+)
+  
+#################################################
+# Functions 
+#################################################
 
 # function to extract true sampled transmission pairs
 extractTransmissionPairs <- function(ttree) {
@@ -55,19 +73,25 @@ extractTipLabels <- function(ttree, tips){
   return(ret)
 }
 
+#################################################
+# Main
+#################################################
+print("Starting simulation...")
 # run simulation (can take a while depending on params)
-simu <- simulateOutbreak(neg=Ne*(gen.mean/365),
+simu <- simulateOutbreak(neg=ne*(genMean/365),
                          pi=pi,
-                         off.r=off.r,
-                         w.mean=gen.mean/365,
-                         w.std=gen.sd/365,
-                         ws.mean=samp.mean/365,
-                         ws.std=samp.sd/365,
+                         off.r=r,
+                         w.mean=genMean/365,
+                         w.std=genSD/365,
+                         ws.mean=sampMean/365,
+                         ws.std=sampSD/365,
                          dateStartOutbreak=start,
                          dateT=end,
-                         nSampled=n)
+                         nSampled=nSampled)
+print("Finished simulation!")
 simu
 
+print("Extracting true pairs and writing outputs...")
 ttree<-extractTTree(simu)
 ptree<-extractPTree(simu)
 
@@ -94,4 +118,5 @@ saveRDS(simu, file=paste0(out, ".rds"))
 print(paste0("Number of tips sampled: ", length(p$tip.label)))
 print(paste0("Number of true pairs sampled:", nrow(pairs)))
 print(paste0("Writing outputs with prefix: ", out))
-print(paste0("Date last sample:"), dateLastSample(simu))
+
+print("Done!")
