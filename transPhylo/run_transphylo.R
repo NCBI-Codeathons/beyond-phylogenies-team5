@@ -78,6 +78,10 @@ print(ess)
 med=medTTree(res, burnin=burn)
 ttree=extractTTree(med)
 
+pdf(paste0(out,"_inferredTtree.pdf"))
+plot(ttree)
+dev.off()
+
 #cons.ttree <- consTTree(res, burnin=burn)
 
 # pairwise transmission matrix 

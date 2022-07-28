@@ -102,6 +102,10 @@ print("Extracting true pairs and writing outputs...")
 ttree<-extractTTree(simu)
 ptree<-extractPTree(simu)
 
+pdf(paste0(out,"_simTtree.pdf"))
+plot(ttree)
+dev.off()
+
 # extract and write true pairs
 pairs<-extractTransmissionPairs(ttree)
 write.table(pairs,
