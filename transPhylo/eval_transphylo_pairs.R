@@ -125,10 +125,11 @@ ggplot(sm, aes(x=prob.thresh, y=value, color=variable)) +
   geom_line(lwd=2)
 dev.off()
   
-write.csv(results,
-          paste0(out, "_pairEval.tsv"), 
-          row.names=FALSE,
-          sep="\t",
-          quote=FALSE)
+write.table(results,
+            paste0(out, "_pairEval.tsv"),
+            col.names=TRUE,
+            row.names=FALSE,
+            sep="\t",
+            quote=FALSE)
 
 print("Done!")

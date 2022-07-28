@@ -199,11 +199,12 @@ ggplot(sm, aes(x=thresh, y=value, color=variable)) +
   geom_line(lwd=2)
 dev.off()
 
-write.csv(results,
-          paste0(out, "_clustEval.tsv"), 
-          row.names=FALSE,
-          sep="\t",
-          quote=FALSE)
+write.table(results,
+            paste0(out, "_clustEval.tsv"),
+            col.names=TRUE,
+            row.names=FALSE,
+            sep="\t",
+            quote=FALSE)
 
 print("Done!")
 
