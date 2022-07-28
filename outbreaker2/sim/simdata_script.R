@@ -71,10 +71,14 @@ pdf('alpha_post_freq.pdf')
 plot(res, type = "alpha", burnin = 2000)
 dev.off()
 
+pdf('kappa_post.pdf')
+plot(res, type = "kappa", burnin = 2000)
+dev.off()
+
 library(htmltools)
 save_html(plot(res, type = "network", burnin = 3000, min_support = 0.80),'test.html')
 
-links = summary(res)$tree
+links = summary(res,min_support=0.0)$tree
 links = na.omit(links)
 links$fromT = seqNums[links$from]
 links$toT = seqNums[links$to]
@@ -90,11 +94,31 @@ row.names(links) <- NULL
 
 
 ## now prep the TPR/FPR curve
-for(j in seq(from = 0, to = 1, by = 0.05)){
-  
+tpr = c()
+fpr = c()
+cutSeq = seq(from = 0, to = 1, by = 0.05)
+for(cutoff in cutSeq){
+  linksLoc = links[links$support>=cutoff,c('fromT','toT')]
+  truePositives = sum(do.call(paste, pairs) %in% do.call(paste, linksLoc))
+  falseNegatives = sum(!(do.call(paste, pairs) %in% do.call(paste, linksLoc)))
+  falsePositives = sum(!(do.call(paste, linksLoc) %in% do.call(paste, pairs)))
+  trueNegatives = length(seqs)^2 - falseNegatives - falsePositives - truePositives
+  tpr = c(tpr,truePositives/(truePositives + falseNegatives))
+  fpr = c(fpr,falsePositives/(falsePositives + trueNegatives))
 }
 
-links = links[links$support>cutoff,]
+pdf('tpr_curve.pdf')
+plot(cutSeq,fpr,type='l',xlab='Posterior threshold')
+dev.off()
+
+pdf('fpr_curve.pdf')
+plot(cutSeq,tpr,type='l',xlab='Posterior threshold')
+dev.off()
+
+pdf('tpr_fpr_curve.pdf')
+plot(tpr,fpr,type='l')
+dev.off()
+
 
 
 
