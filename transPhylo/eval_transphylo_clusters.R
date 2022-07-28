@@ -5,6 +5,7 @@ suppressPackageStartupMessages({
   library(TransPhylo)
   library(plyr)
   library(dplyr)
+  library(ggplot2)
   library(reshape2)
   library(GetoptLong)
 })
@@ -184,6 +185,10 @@ for (thresh in seq(min, max, 1)){
   print(thresh)
   clust<-cluster_transmission_graph(g, thresh, plot=FALSE)
   pairs <- get_pairs_from_clusters(clust)
+  if(nrow(pairs) < 1){
+    print("No observed pairs... Skipping")
+    next
+  }
   stats <- get_stats_pairs(true_pairs, pairs)
   stats["thresh"] <- thresh
   results <- rbind(results, stats)

@@ -109,6 +109,10 @@ results<-list()
 for (thresh in seq(minP, maxP, step)){
   print(thresh)
   pairs <- get_pairs(mat, thresh)
+  if(nrow(pairs) < 1){
+    print("No observed pairs... Skipping")
+    next
+  }
   stats <- get_stats_pairs(true_pairs, pairs)
   stats["prob.thresh"] <- thresh
   results <- rbind(results, stats)
