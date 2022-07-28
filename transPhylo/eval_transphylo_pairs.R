@@ -107,6 +107,7 @@ mat <- readRDS(mat)
 print("Testing across specified clustering thresholds...")
 results<-list()
 for (thresh in seq(minP, maxP, step)){
+  print(thresh)
   pairs <- get_pairs(mat, thresh)
   stats <- get_stats_pairs(true_pairs, pairs)
   stats["prob.thresh"] <- thresh
@@ -119,7 +120,7 @@ print("Outputting results as _clustEval.pdf and _clustEval.tsv")
 
 s <- results %>% select(tpr, fdr, fnr, precision, prob.thresh)
 sm <- melt(s, id="prob.thresh")
-pdf(paste0(out, "_clustEval.pdf"))
+pdf(paste0(out, "_pairEval.pdf"))
 ggplot(sm, aes(x=prob.thresh, y=value, color=variable)) +
   theme_minimal() + 
   geom_line(lwd=2)

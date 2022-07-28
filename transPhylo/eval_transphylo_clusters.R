@@ -175,11 +175,11 @@ true_pairs <- read.table(truePairs,
                          sep="\t")
 
 
-
 # try different clustering thresholds and get results 
 print("Testing across specified clustering thresholds...")
 results<-list()
-for (thresh in seq(1, 10, 1)){
+for (thresh in seq(min, max, 1)){
+  print(thresh)
   clust<-cluster_transmission_graph(g, thresh, plot=FALSE)
   pairs <- get_pairs_from_clusters(clust)
   stats <- get_stats_pairs(true_pairs, pairs)
