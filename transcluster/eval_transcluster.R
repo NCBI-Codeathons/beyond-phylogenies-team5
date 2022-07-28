@@ -4,7 +4,6 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(plyr)
   library(dplyr)
-  library(reshape2)
   library(GetoptLong)
 })
 
@@ -12,31 +11,38 @@ suppressPackageStartupMessages({
 # Command-line arg parsing
 #################################################
 
-minP<-0.5
-maxP<-1.0
-step<-0.05
-out<-"out"
+out <- "out"
 
 GetoptLong(
-  "mat=s", "Path to pairwise transmission prob matrix (.rds output from run_transphylo.R)",
+  "dir=s", "Directory containing transcluster outputs",
   "truePairs=s", "Path to known .pairs file",
-  "out=s", "Output file prefix",
-  "minP=f", "Minimum posterior probability threshold to test",
-  "maxP=f", "Maximum posterior probability threshold to test",
-  "step=f", "Step size for posterior probability range"
+  "out=s", "Output file prefix"
 )
 
 #################################################
 # Functions
 #################################################
 
-# get pairs above some posterior probability threshold 
-get_pairs <- function(wiw, thresh){
-  to<-gsub(".*_", "", rownames(wiw)[which(wiw > thresh, arr.ind = TRUE)[, 1]])
-  from<-gsub(".*_", "", colnames(wiw)[which(wiw > thresh, arr.ind = TRUE)[, 2]])
-  pp<-wiw[wiw > thresh]
-  pairs <- data.frame("from"=from, "to"=to, "prob"=pp)
-  return(pairs)
+read_input <- function(fname){
+  lines <- readLines(fname)
+  ctr <- 0
+  rows <- lapply(lines, function(x){
+    seq_ids <- strsplit(x, ",")[[1]]
+    tmp <- data.frame(seq = seq_ids)
+    tmp$cluster <- ctr 
+    ctr <<- ctr + 1
+    tmp
+  })
+  
+  df <- do.call("rbind", rows)
+  snp_threshold <- df[1:2,]
+  df <- df[3:nrow(df),]
+  df["threshold"] <- snp_threshold[1,1]
+  df["threshold_val"] <- as.numeric(snp_threshold[2,1])
+  df$seq_id <- df$seq %>%
+    strsplit( "_" ) %>%
+    sapply( "[", 3 )
+  return(df)
 }
 
 # returns some stats 
@@ -94,47 +100,65 @@ get_stats_pairs <- function(exp, obs, bidirectional=TRUE){
   return(ret)
 }
 
+get_pairs_from_clusterMembership <- function(clusters){
+  from<-list()
+  to<-list()
+  for (clust in split(clusters, clusters$cluster)){
+    if (nrow(clust) < 2){
+      next
+    }
+    pairs=combn(clust$seq,2)
+    for (j in 1:ncol(pairs)){
+      from <- c(from, as.integer(pairs[1,j]))
+      to <- c(to, as.integer(pairs[2,j]))
+    }
+  }
+  pairs <- data.frame("from"=unlist(from), "to"=unlist(to))
+  return(pairs)
+}
+
+
 #################################################
 # Main
 #################################################
-print("Reading inputs...")
+
+print("Reading known pairs...")
 true_pairs <- read.table(truePairs,
                          header=T, 
                          sep="\t")
 
-mat <- readRDS(mat)
+print(paste0("Reading all transcluster outputs in", dir, "..."))
+output_files <- list.files(dir, pattern="*.csv", full.names=T)
 
-print("Testing across specified clustering thresholds...")
+res <- lapply(output_files, function(x){
+    read_input(x)
+})
+res_df <- do.call("rbind", res)
+res_df$seq <- gsub(".*_", "", res_df$seq)
+
+print("Testing across supplied clustering thresholds...")
 results<-list()
-for (thresh in seq(minP, maxP, step)){
-  print(thresh)
-  pairs <- get_pairs(mat, thresh)
+for (group_df in split(res_df, list(res_df$threshold, res_df$threshold_val))){
+  threshold_type<-group_df[1,"threshold"]
+  thresh<-group_df[1,"threshold_val"]
+  print(paste0(threshold_type," -- ", thresh))
+  pairs <- get_pairs_from_clusterMembership(group_df)
   if(nrow(pairs) < 1){
     print("No observed pairs... Skipping")
     next
   }
   stats <- get_stats_pairs(true_pairs, pairs)
-  stats["prob.thresh"] <- thresh
+  stats["threshold"] <- thresh
+  stats["threshold_type"] <- threshold_type
   results <- rbind(results, stats)
 }
 results <- rbind.fill(results)
 
-# make plots 
-print("Outputting results as _clustEval.pdf and _clustEval.tsv")
+nclusters_df <- known_res_df %>%
+    group_by(threshold, threshold_val) %>%
+    summarise(ncluster = n_distinct(cluster))
 
-s <- results %>% select(tpr, fdr, fnr, precision, prob.thresh)
-sm <- melt(s, id="prob.thresh")
-pdf(paste0(out, "_pairEval.pdf"))
-ggplot(sm, aes(x=prob.thresh, y=value, color=variable)) +
-  theme_minimal() + 
-  geom_line(lwd=2)
-dev.off()
-  
-write.table(results,
-            paste0(out, "_pairEval.tsv"),
-            col.names=TRUE,
-            row.names=FALSE,
-            sep="\t",
-            quote=FALSE)
 
-print("Done!")
+nclusters_df %>%
+    ggplot(aes(threshold_val, ncluster)) + geom_line() + geom_point() + geom_hline(yintercept = true_clusters, linetype = "dashed", color="red") + facet_grid(threshold ~ .) +theme_bw() + scale_x_continuous(breaks=seq(1, 10))
+ggsave("./simulated_results.pdf", w= 7.5, h = 10)
