@@ -1,8 +1,8 @@
 suppressPackageStartupMessages({
-  require(TransPhylo)
-  require(ape)
-  require(lubridate)
-  require(GetoptLong)
+  library(TransPhylo)
+  library(ape)
+  library(lubridate)
+  library(GetoptLong)
 })
 
 #################################################
