@@ -20,6 +20,7 @@ sampMean <- 5.2
 sampSD <- 1.72
 nSampled=200
 out<-"sim"
+seed=321321
 
 GetoptLong(
   "ne=i", "Intrahost effective population size (Ne)",
@@ -31,7 +32,9 @@ GetoptLong(
   "genSD=f", "Generation time distribution stdev (days)",
   "sampMean=f", "Sampling time distribution mean (days)",
   "sampSD=f", "Sampling time distribution stdev (days)",
-  "nSampled=i", "Number of individuals sampled"
+  "nSampled=i", "Number of individuals sampled",
+  "out=s", "Output file prefix",
+  "seed=i", "Random number seed"
 )
   
 #################################################
@@ -76,6 +79,8 @@ extractTipLabels <- function(ttree, tips){
 #################################################
 # Main
 #################################################
+set.seed(seed)
+
 print("Starting simulation...")
 # run simulation (can take a while depending on params)
 simu <- simulateOutbreak(neg=ne*(genMean/365),
