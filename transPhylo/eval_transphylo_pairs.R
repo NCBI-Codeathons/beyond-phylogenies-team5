@@ -1,7 +1,34 @@
-library(ggplot2)
-library(plyr)
-library(dplyr)
-library(reshape2)
+#!/usr/local/bin/Rscript
+
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(plyr)
+  library(dplyr)
+  library(reshape2)
+  library(GetoptLong)
+})
+
+#################################################
+# Command-line arg parsing
+#################################################
+
+minP<-0.5
+maxP<-1.0
+step<-0.05
+out<-"out"
+
+GetoptLong(
+  "mat=s", "Path to pairwise transmission prob matrix (.rds output from run_transphylo.R)",
+  "truePairs=s", "Path to known .pairs file",
+  "out=s", "Output file prefix",
+  "minP=f", "Minimum posterior probability threshold to test",
+  "maxP=f", "Maximum posterior probability threshold to test",
+  "step=f", "Step size for posterior probability range"
+)
+
+#################################################
+# Functions
+#################################################
 
 # get pairs above some posterior probability threshold 
 get_pairs <- function(wiw, thresh){
@@ -67,19 +94,19 @@ get_stats_pairs <- function(exp, obs, bidirectional=TRUE){
   return(ret)
 }
 
-# need to make a version for clusters 
-#get_stats_clusters <- function(exp, obs\){
-#  
-#}
-
-true_pairs <- read.table("~/beyond-phylogenies-team5/simulation/sim_123-23/sim_123-23.pairs",
+#################################################
+# Main
+#################################################
+print("Reading inputs...")
+true_pairs <- read.table(truePairs,
                          header=T, 
                          sep="\t")
 
-mat <- readRDS("~/beyond-phylogenies-team5/simulation/sim_123-23/transphylo_sim123-23_transphylo_matrix.rds")
+mat <- readRDS(mat)
 
+print("Testing across specified clustering thresholds...")
 results<-list()
-for (thresh in seq(0.4, 1.0, 0.02)){
+for (thresh in seq(minP, maxP, step)){
   pairs <- get_pairs(mat, thresh)
   stats <- get_stats_pairs(true_pairs, pairs)
   stats["prob.thresh"] <- thresh
@@ -88,13 +115,20 @@ for (thresh in seq(0.4, 1.0, 0.02)){
 results <- rbind.fill(results)
 
 # make plots 
+print("Outputting results as _clustEval.pdf and _clustEval.tsv")
+
 s <- results %>% select(tpr, fdr, fnr, precision, prob.thresh)
 sm <- melt(s, id="prob.thresh")
-pdf("~/beyond-phylogenies-team5/simulation/sim_123-23/transphylo_sim123-23_eval-plot.pdf")
+pdf(paste0(out, "_clustEval.pdf"))
 ggplot(sm, aes(x=prob.thresh, y=value, color=variable)) +
   theme_minimal() + 
   geom_line(lwd=2)
 dev.off()
   
+write.csv(results,
+          paste0(out, "_pairEval.tsv"), 
+          row.names=FALSE,
+          sep="\t",
+          quote=FALSE)
 
-
+print("Done!")
